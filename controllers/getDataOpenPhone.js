@@ -1,14 +1,14 @@
 import findContactInZohoCRM from './findContactInZohoCRM.js'
+import updateContactWithCallRecording from './updateContactWithCallRecording.js'
 
 const getDataOpenPhone = async (req, res) => {
   try {
     const callData = req.body.data.object
-    const { from, to } = callData
+    const { from, to, media } = callData
 
-    console.log('Received webhook data:', from)
+    console.log('Received webhook data:', callData)
 
     const formattedFrom = `+1 ${from}`
-    console.log('formattedFrom', formattedFrom)
     const formattedTo = `+1 ${to}`
 
     let contact = await findContactInZohoCRM(formattedFrom)
@@ -17,13 +17,17 @@ const getDataOpenPhone = async (req, res) => {
       contact = await findContactInZohoCRM(formattedTo)
     }
 
-    if (formattedFrom === contact) {
-      console.log('true')
+    if (contact) {
+      const result = await updateContactWithCallRecording(
+        contact.id,
+        media[0].url
+      )
+      res
+        .status(200)
+        .json({ message: 'Call recording added successfully', result })
     } else {
-      console.log('false')
+      res.status(404).json({ message: 'Contact not found' })
     }
-
-    res.status(200).json({ message: 'Call record added successfully', result })
   } catch (error) {
     console.error('Error processing webhook:', error)
     res.status(500).json({ error: 'Internal Server Error' })

@@ -11,10 +11,8 @@ const findContactInZohoCRM = async (phone) => {
       }
     )
 
-    console.log('response', response.data.data[0].Phone)
-
     if (response.data.data && response.data.data.length > 0) {
-      return response.data.data[0].Phone
+      return response.data.data[0]
     } else {
       return null
     }
