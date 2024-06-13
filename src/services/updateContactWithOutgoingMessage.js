@@ -1,3 +1,5 @@
+import axios from 'axios'
+
 const updateContactWithOutgoingMessage = async (contactId, message) => {
   try {
     const response = await axios.get(
@@ -10,7 +12,15 @@ const updateContactWithOutgoingMessage = async (contactId, message) => {
     )
 
     let currentMessages = response.data.data[0].Outgoing_Messages || ''
-    currentMessages += `\n${message}`
+
+    const messagesArray = currentMessages
+      .split('\n')
+      .filter((msg) => msg.trim() !== '')
+    const messageCount = messagesArray.length
+
+    const numberedMessage = `${messageCount + 1}. ${message}`
+
+    currentMessages += `\n${numberedMessage}`
 
     await axios.put(
       `${process.env.ZOHO_CRM_API_BASE_URL}/Contacts`,

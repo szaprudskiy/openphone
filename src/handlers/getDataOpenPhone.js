@@ -10,12 +10,14 @@ const getDataOpenPhone = async (req, res) => {
       data: { object: eventData },
     } = req.body
 
-    console.log('Received webhook event:', type, eventData)
+    // console.log('Received webhook event:', type, eventData)
 
     const { from, to, media, body } = eventData
 
     const formattedFrom = formatPhoneNumber(from)
     const formattedTo = formatPhoneNumber(to)
+
+    console.log('formattedFrom', formattedFrom)
 
     let contact = await findContactInZohoCRM(formattedFrom)
 

@@ -13,7 +13,14 @@ const updateContactWithRecording = async (contactId, recordingUrl) => {
 
     let currentRecordings = response.data.data[0].Multi_Line_5 || ''
 
-    currentRecordings += `\n${recordingUrl}`
+    const recordingsArray = currentRecordings
+      .split('\n')
+      .filter((msg) => msg.trim() !== '')
+    const recordingCount = recordingsArray.length
+
+    const numberedRecording = `${recordingCount + 1}. ${recordingUrl}`
+
+    currentRecordings += `\n${numberedRecording}`
 
     await axios.put(
       apiUrl,
