@@ -2,6 +2,7 @@ import formatPhoneNumber from '../utils/formatPhoneNumber.js'
 import findContactInZohoCRM from '../services/findContactInZohoCRM.js'
 import updateContactWithIncomingMessage from '../services/updateContactWithIncomingMessage.js'
 import updateContactWithOutgoingMessage from '../services/updateContactWithOutgoingMessage.js'
+import updateContactWithRecording from '../services/updateContactWithCallRecording.js'
 
 const getDataOpenPhone = async (req, res) => {
   try {
@@ -27,7 +28,7 @@ const getDataOpenPhone = async (req, res) => {
 
     if (contact) {
       if (type === 'call.recording.completed') {
-        const result = await updateContactWithCallRecording(
+        const result = await updateContactWithRecording(
           contact.id,
           media[0].url
         )
