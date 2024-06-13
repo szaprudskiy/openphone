@@ -4,7 +4,7 @@ dotenv.config()
 const PORT = 4004
 const app = express()
 
-import router from './routers/index.js'
+import router from './src/routers/index.js'
 
 app.use(express.json())
 

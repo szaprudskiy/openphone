@@ -2,7 +2,7 @@ import express from 'express'
 
 const getDataOpenPhoneRouter = express.Router()
 
-import getDataOpenPhone from '../controllers/getDataOpenPhone.js'
+import getDataOpenPhone from '../handlers/getDataOpenPhone.js'
 
 getDataOpenPhoneRouter.post('/', getDataOpenPhone)
 
