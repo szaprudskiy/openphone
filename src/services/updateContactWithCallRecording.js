@@ -23,7 +23,7 @@ const updateContactWithRecording = async (contactId, recordingUrl) => {
     currentRecordings += `\n${numberedRecording}`
 
     await axios.put(
-      apiUrl,
+      `${process.env.ZOHO_CRM_API_BASE_URL}/Contacts`,
       {
         data: [
           {
