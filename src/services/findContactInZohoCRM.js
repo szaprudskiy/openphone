@@ -1,12 +1,14 @@
 import axios from 'axios'
+import getAccessToken from './getAccessToken.js'
 
 const findContactInZohoCRM = async (phone) => {
   try {
+    const accessToken = await getAccessToken()
     const response = await axios.get(
       `${process.env.ZOHO_CRM_API_BASE_URL}/Contacts/search?phone=${phone}`,
       {
         headers: {
-          Authorization: `Zoho-oauthtoken ${process.env.TOKEN}`,
+          Authorization: `Zoho-oauthtoken ${accessToken}`,
         },
       }
     )

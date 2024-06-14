@@ -1,12 +1,14 @@
 import axios from 'axios'
+import getAccessToken from './getAccessToken.js'
 
 const updateContactWithRecording = async (contactId, recordingUrl) => {
   try {
+    const accessToken = await getAccessToken()
     const response = await axios.get(
       `${process.env.ZOHO_CRM_API_BASE_URL}/Contacts/${contactId}`,
       {
         headers: {
-          Authorization: `Zoho-oauthtoken ${process.env.TOKEN}`,
+          Authorization: `Zoho-oauthtoken ${accessToken}`,
         },
       }
     )
@@ -34,7 +36,7 @@ const updateContactWithRecording = async (contactId, recordingUrl) => {
       },
       {
         headers: {
-          Authorization: `Zoho-oauthtoken ${process.env.TOKEN}`,
+          Authorization: `Zoho-oauthtoken ${accessToken}`,
           'Content-Type': 'application/json',
         },
       }
