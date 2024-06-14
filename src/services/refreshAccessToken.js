@@ -21,7 +21,7 @@ const refreshAccessToken = async () => {
     zohoConfig.accessToken = access_token
     zohoConfig.tokenExpiration = Date.now() + expires_in * 1000
 
-    console.log('access_token', access_token)
+    console.log('access_token!', access_token)
 
     return access_token
   } catch (error) {
