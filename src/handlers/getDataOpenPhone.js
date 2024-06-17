@@ -26,6 +26,10 @@ const getDataOpenPhone = async (req, res) => {
       contact = await findContactInZohoCRM(formattedTo)
     }
 
+    if (!contact) {
+      contact = await createContactInZohoCRM(formattedFrom || formattedTo)
+    }
+
     if (contact) {
       if (type === 'call.recording.completed') {
         const result = await updateContactWithRecording(
