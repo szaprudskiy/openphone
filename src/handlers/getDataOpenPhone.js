@@ -28,7 +28,7 @@ const getDataOpenPhone = async (req, res) => {
     }
 
     if (!contact) {
-      contact = await createContactInZohoCRM(formattedFrom || formattedTo)
+      contact = await createContactInZohoCRM(formattedTo)
     }
 
     if (contact) {
