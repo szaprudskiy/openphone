@@ -3,6 +3,7 @@ import findContactInZohoCRM from '../services/findContactInZohoCRM.js'
 import updateContactWithIncomingMessage from '../services/updateContactWithIncomingMessage.js'
 import updateContactWithOutgoingMessage from '../services/updateContactWithOutgoingMessage.js'
 import updateContactWithRecording from '../services/updateContactWithCallRecording.js'
+import createContactInZohoCRM from '../services/createContactInZohoCRM.js'
 
 const getDataOpenPhone = async (req, res) => {
   try {
