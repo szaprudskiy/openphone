@@ -10,7 +10,7 @@ const getDataOpenPhone = async (req, res) => {
     const {
       type,
       data: { object: eventData },
-    } = req.body
+    } = req.body.object
 
     // console.log('Received webhook event:', type, eventData)
 
