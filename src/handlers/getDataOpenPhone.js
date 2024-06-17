@@ -39,12 +39,12 @@ const getDataOpenPhone = async (req, res) => {
         const result = await updateContactWithIncomingMessage(contact.id, body)
         res
           .status(200)
-          .json({ message: 'Incoming Message added successfully', result })
+          .json({ message: 'Outgoing Message added successfully', result })
       } else if (type === 'message.delivered') {
         const result = await updateContactWithOutgoingMessage(contact.id, body)
         res
           .status(200)
-          .json({ message: 'Outgoing Message added successfully', result })
+          .json({ message: 'Incoming Message added successfully', result })
       }
     } else {
       res.status(404).json({ message: 'Contact not found' })

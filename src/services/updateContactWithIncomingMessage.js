@@ -20,7 +20,7 @@ const updateContactWithIncomingMessage = async (contactId, message) => {
     //   .filter((msg) => msg.trim() !== '')
     // const messageCount = messagesArray.length
     // const numberedMessage = `${messageCount + 1}. Incoming: ${message}`
-    const numberedMessage = `Incoming: ${message}`
+    const numberedMessage = `Outgoing: ${message}`
 
     currentMessages += `\n${numberedMessage}`
     await axios.put(
@@ -41,7 +41,7 @@ const updateContactWithIncomingMessage = async (contactId, message) => {
       }
     )
 
-    console.log('Incoming Message added successfully.')
+    console.log('Outgoing Message added successfully.')
   } catch (error) {
     console.error('Error adding Incoming Message to contact:', error)
   }

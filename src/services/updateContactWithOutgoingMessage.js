@@ -21,7 +21,7 @@ const updateContactWithOutgoingMessage = async (contactId, message) => {
     // const messageCount = messagesArray.length
 
     // const numberedMessage = `${messageCount + 1}. Outgoing: ${message}`
-    const numberedMessage = `Outgoing: ${message}`
+    const numberedMessage = `Incoming: ${message}`
 
     currentMessages += `\n${numberedMessage}`
 
@@ -43,7 +43,7 @@ const updateContactWithOutgoingMessage = async (contactId, message) => {
       }
     )
 
-    console.log('Outgoing Message added successfully.')
+    console.log('Icoming Message added successfully.')
   } catch (error) {
     console.error('Error adding Outgoing Message to contact:', error)
   }
