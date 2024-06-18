@@ -2,12 +2,12 @@ import axios from 'axios'
 import getAccessToken from './getAccessToken.js'
 import findContactInZohoCRM from './findContactInZohoCRM.js'
 
-const createContactInZohoCRM = async (phone) => {
+const createContactInZohoCRM = async (phone, recordingUrl, message, type) => {
   try {
+    const accessToken = await getAccessToken()
     const existingContact = await findContactInZohoCRM(phone)
 
     if (existingContact) {
-      const accessToken = await getAccessToken()
       const response = await axios.put(
         `${process.env.ZOHO_CRM_API_BASE_URL}/Contacts`,
         {
@@ -15,7 +15,7 @@ const createContactInZohoCRM = async (phone) => {
             {
               id: existingContact.id,
               Phone: phone,
-              Last_Name: 'OpenPhone Updated', // Example: Update Last_Name if needed
+              Last_Name: existingContact.Last_Name,
             },
           ],
         },
@@ -35,7 +35,12 @@ const createContactInZohoCRM = async (phone) => {
         return null
       }
     } else {
-      const accessToken = await getAccessToken()
+      let currentRecordings = recordingUrl ? `1. ${recordingUrl}` : ''
+      let currentMessage
+      type === 'message.received' ? `Outgoing: ${message}` : ''
+      currentMessage =
+        type === 'message.delivered' ? `Incoming: ${message}` : ''
+
       const response = await axios.post(
         `${process.env.ZOHO_CRM_API_BASE_URL}/Contacts`,
         {
@@ -43,6 +48,8 @@ const createContactInZohoCRM = async (phone) => {
             {
               Phone: phone,
               Last_Name: 'OpenPhone',
+              Multi_Line_5: currentRecordings,
+              Incoming_Messages: currentMessage,
             },
           ],
         },
@@ -54,17 +61,12 @@ const createContactInZohoCRM = async (phone) => {
         }
       )
 
-      console.log('Contact created in Zoho CRM:', response.data)
-
-      if (response.data.data && response.data.data.length > 0) {
-        return response.data.data[0]
-      } else {
-        return null
-      }
+      console.log('Contact created in Zoho CRM:', response.data.data[0])
+      return response.data.data[0]
     }
   } catch (error) {
     console.error('Error creating/updating contact in Zoho CRM:', error)
-    return null
+    throw new Error('Error creating/updating contact in Zoho CRM')
   }
 }
 
