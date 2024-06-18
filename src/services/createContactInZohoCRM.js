@@ -35,11 +35,20 @@ const createContactInZohoCRM = async (phone, recordingUrl, message, type) => {
         return null
       }
     } else {
+      console.log('phone', phone)
+      console.log('recordingUrl', recordingUrl)
+      console.log('message', message)
+      console.log('type', type)
+
       let currentRecordings = recordingUrl ? `1. ${recordingUrl}` : ''
+
       let currentMessage
-      type === 'message.received' ? `Outgoing: ${message}` : ''
-      currentMessage =
-        type === 'message.delivered' ? `Incoming: ${message}` : ''
+
+      if (type === 'message.received') {
+        currentMessage = `Outgoing: ${message}`
+      } else if (type === 'message.delivered') {
+        currentMessage = `Incoming: ${message}`
+      }
 
       const response = await axios.post(
         `${process.env.ZOHO_CRM_API_BASE_URL}/Contacts`,
