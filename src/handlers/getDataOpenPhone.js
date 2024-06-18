@@ -10,7 +10,7 @@ const getDataOpenPhone = async (req, res) => {
     const {
       type,
       data: { object: eventData },
-    } = req.body
+    } = req.body.object
 
     const { from, to, media, body } = eventData
 
@@ -24,7 +24,7 @@ const getDataOpenPhone = async (req, res) => {
     }
     if (!contact) {
       contact = await createContactInZohoCRM(
-        formattedTo,
+        formattedFrom || formattedTo,
         media ? media[0]?.url : null,
         body,
         type
