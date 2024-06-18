@@ -5,6 +5,8 @@ import updateContactWithOutgoingMessage from '../services/updateContactWithOutgo
 import updateContactWithRecording from '../services/updateContactWithCallRecording.js'
 import createContactInZohoCRM from '../services/createContactInZohoCRM.js'
 
+const excludedNumbers = ['+1 (727) 966-2707', '+1 (737) 345-3339']
+
 const getDataOpenPhone = async (req, res) => {
   try {
     const {
@@ -17,28 +19,34 @@ const getDataOpenPhone = async (req, res) => {
     const formattedFrom = formatPhoneNumber(from)
     const formattedTo = formatPhoneNumber(to)
 
-    let contact = await findContactInZohoCRM(formattedFrom)
+    let contact = null
+    let validNumber = null
 
-    if (!contact) {
-      contact = await findContactInZohoCRM(formattedTo)
+    if (!excludedNumbers.includes(formattedFrom)) {
+      validNumber = formattedFrom
+    } else if (!excludedNumbers.includes(formattedTo)) {
+      validNumber = formattedTo
     }
-    if (!contact) {
-      contact = await createContactInZohoCRM(
-        formattedFrom || formattedTo,
-        media ? media[0]?.url : null,
-        body,
-        type
-      )
 
+    if (validNumber) {
+      contact = await findContactInZohoCRM(validNumber)
       if (!contact) {
-        return res
-          .status(500)
-          .json({ error: 'Error creating/updating contact in Zoho CRM' })
+        contact = await createContactInZohoCRM(
+          validNumber,
+          media ? media[0]?.url : null,
+          body,
+          type
+        )
+        if (!contact) {
+          return res
+            .status(500)
+            .json({ error: 'Error creating/updating contact in Zoho CRM' })
+        } else {
+          return res
+            .status(200)
+            .json({ message: 'Creating/updating contact in Zoho CRM', contact })
+        }
       }
-
-      return res
-        .status(200)
-        .json({ message: 'Contact created/updated successfully', contact })
     }
 
     if (contact) {
@@ -47,26 +55,26 @@ const getDataOpenPhone = async (req, res) => {
           contact.id,
           media[0].url
         )
-        res
+        return res
           .status(200)
           .json({ message: 'Call recording added successfully', result })
       } else if (type === 'message.received') {
         const result = await updateContactWithIncomingMessage(contact.id, body)
-        res
+        return res
           .status(200)
           .json({ message: 'Incoming Message added successfully', result })
       } else if (type === 'message.delivered') {
         const result = await updateContactWithOutgoingMessage(contact.id, body)
-        res
+        return res
           .status(200)
           .json({ message: 'Outgoing Message added successfully', result })
       }
     } else {
-      res.status(404).json({ message: 'Contact not found' })
+      return res.status(404).json({ message: 'Contact not found' })
     }
   } catch (error) {
     console.error('Error processing webhook:', error)
-    res.status(500).json({ error: 'Internal Server Error' })
+    return res.status(500).json({ error: 'Internal Server Error' })
   }
 }
 
