@@ -7,6 +7,8 @@ import createContactInZohoCRM from '../services/createContactInZohoCRM.js'
 
 const excludedNumbers = ['+1 (727) 966-2707', '+1 (737) 345-3339']
 
+const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
+
 const getDataOpenPhone = async (req, res) => {
   try {
     const {
@@ -31,6 +33,7 @@ const getDataOpenPhone = async (req, res) => {
     if (validNumber) {
       contact = await findContactInZohoCRM(validNumber)
       if (!contact) {
+        await delay(100000)
         contact = await createContactInZohoCRM(
           validNumber,
           media ? media[0]?.url : null,
