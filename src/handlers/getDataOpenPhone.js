@@ -31,9 +31,9 @@ const getDataOpenPhone = async (req, res) => {
     }
 
     if (validNumber) {
+      await delay(90000)
       contact = await findContactInZohoCRM(validNumber)
       if (!contact) {
-        await delay(60000)
         contact = await createContactInZohoCRM(
           validNumber,
           media ? media[0]?.url : null,
