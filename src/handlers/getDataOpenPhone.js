@@ -33,7 +33,6 @@ const getDataOpenPhone = async (req, res) => {
       return res.status(404).json({ message: 'Valid number not found' })
     }
 
-    // Ensure each validNumber has its own queue
     if (!queueMap.has(validNumber)) {
       queueMap.set(validNumber, new RequestQueue({ concurrency: 1 }))
     }
