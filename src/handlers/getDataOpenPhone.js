@@ -7,7 +7,7 @@ import createContactInZohoCRM from '../services/createContactInZohoCRM.js'
 import RequestQueue from 'node-request-queue'
 
 const excludedNumbers = ['+1 (727) 966-2707', '+1 (737) 345-3339']
-const queue = new RequestQueue({ concurrency: 1 })
+const queueMap = new Map()
 
 const getDataOpenPhone = async (req, res) => {
   try {
@@ -32,6 +32,13 @@ const getDataOpenPhone = async (req, res) => {
     if (!validNumber) {
       return res.status(404).json({ message: 'Valid number not found' })
     }
+
+    // Ensure each validNumber has its own queue
+    if (!queueMap.has(validNumber)) {
+      queueMap.set(validNumber, new RequestQueue({ concurrency: 1 }))
+    }
+
+    const queue = queueMap.get(validNumber)
 
     const contact = await queue.add(async () => {
       let existingContact = await findContactInZohoCRM(validNumber)
