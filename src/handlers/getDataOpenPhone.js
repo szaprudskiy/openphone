@@ -1,13 +1,26 @@
 import Queue from 'queue-promise'
 import formatPhoneNumber from '../utils/formatPhoneNumber.js'
 import findContactInZohoCRM from '../services/findContactInZohoCRM.js'
-import createContactInZohoCRM from '../services/createContactInZohoCRM.js'
 import updateContactWithIncomingMessage from '../services/updateContactWithIncomingMessage.js'
 import updateContactWithOutgoingMessage from '../services/updateContactWithOutgoingMessage.js'
 import updateContactWithRecording from '../services/updateContactWithCallRecording.js'
+import createContactInZohoCRM from '../services/createContactInZohoCRM.js'
 
 const excludedNumbers = ['+1 (727) 966-2707', '+1 (737) 345-3339']
-const queue = new Queue({ concurrent: 1 }) // Очередь с одновременным выполнением одной задачи
+
+// Create a queue
+const queue = new Queue({
+  concurrent: 1,
+  interval: 0,
+})
+
+queue.on('resolve', (data) => {
+  console.log('Task completed:', data)
+})
+
+queue.on('reject', (error) => {
+  console.error('Task failed:', error)
+})
 
 const getDataOpenPhone = async (req, res) => {
   try {
@@ -22,81 +35,74 @@ const getDataOpenPhone = async (req, res) => {
     const formattedTo = formatPhoneNumber(to)
 
     let validNumber = null
+
     if (!excludedNumbers.includes(formattedFrom)) {
       validNumber = formattedFrom
     } else if (!excludedNumbers.includes(formattedTo)) {
       validNumber = formattedTo
     }
 
-    if (!validNumber) {
-      return res.status(404).json({ message: 'Valid number not found' })
-    }
+    if (validNumber) {
+      queue.enqueue(async () => {
+        try {
+          let contact = await findContactInZohoCRM(validNumber)
 
-    // Функция для создания контакта в Zoho CRM
-    const createContactTask = async () => {
-      try {
-        const contact = await createContactInZohoCRM(
-          validNumber,
-          media ? media[0]?.url : null,
-          body,
-          type
-        )
-        if (contact) {
-          return { success: true, contact }
-        } else {
-          return { success: false }
+          if (!contact) {
+            contact = await createContactInZohoCRM(
+              validNumber,
+              media ? media[0]?.url : null,
+              body,
+              type
+            )
+
+            if (contact) {
+              res.status(200).json({
+                message: 'Creating/updating contact in Zoho CRM',
+                contact,
+              })
+            } else {
+              res.status(500).json({
+                error: 'Error creating/updating contact in Zoho CRM',
+              })
+              return
+            }
+          }
+
+          if (type === 'call.recording.completed') {
+            const result = await updateContactWithRecording(
+              contact.id,
+              media[0].url
+            )
+            res.status(200).json({
+              message: 'Call recording added successfully',
+              result,
+            })
+          } else if (type === 'message.received') {
+            const result = await updateContactWithIncomingMessage(
+              contact.id,
+              body
+            )
+            res.status(200).json({
+              message: 'Incoming Message added successfully',
+              result,
+            })
+          } else if (type === 'message.delivered') {
+            const result = await updateContactWithOutgoingMessage(
+              contact.id,
+              body
+            )
+            res.status(200).json({
+              message: 'Outgoing Message added successfully',
+              result,
+            })
+          }
+        } catch (error) {
+          console.error('Error processing task:', error)
+          res.status(500).json({ error: 'Internal Server Error' })
         }
-      } catch (error) {
-        console.error('Error creating contact:', error)
-        return { success: false, error }
-      }
-    }
-
-    // Добавляем задачу в очередь на создание контакта
-    const { success, contact, error } = await queue.add(createContactTask)
-
-    if (success) {
-      if (contact) {
-        res.status(201).json({
-          message: 'Contact created successfully in Zoho CRM',
-          contact,
-        })
-      } else {
-        res.status(500).json({
-          error: 'Error creating contact in Zoho CRM',
-        })
-      }
-    } else {
-      res.status(500).json({
-        error: 'Error processing create contact task',
-        details: error ? error.message : 'Unknown error',
       })
-    }
-
-    // Обработка других типов событий
-    if (success && contact) {
-      if (type === 'call.recording.completed') {
-        const result = await updateContactWithRecording(
-          contact.id,
-          media[0].url
-        )
-        res.status(200).json({
-          message: 'Call recording added successfully',
-          result,
-        })
-      } else if (type === 'message.received') {
-        const result = await updateContactWithIncomingMessage(contact.id, body)
-        res.status(200).json({
-          message: 'Incoming Message added successfully',
-          result,
-        })
-      } else if (type === 'message.delivered') {
-        const result = await updateContactWithOutgoingMessage(contact.id, body)
-        res.status(200).json({
-          message: 'Outgoing Message added successfully',
-          result,
-        })
-      }
+    } else {
+      res.status(404).json({ message: 'Valid number not found' })
     }
   } catch (error) {
     console.error('Error processing webhook:', error)
