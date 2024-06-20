@@ -1,15 +1,13 @@
+import AsyncLock from 'async-lock'
 import formatPhoneNumber from '../utils/formatPhoneNumber.js'
 import findContactInZohoCRM from '../services/findContactInZohoCRM.js'
 import updateContactWithIncomingMessage from '../services/updateContactWithIncomingMessage.js'
 import updateContactWithOutgoingMessage from '../services/updateContactWithOutgoingMessage.js'
 import updateContactWithRecording from '../services/updateContactWithCallRecording.js'
 import createContactInZohoCRM from '../services/createContactInZohoCRM.js'
-import AsyncLock from 'async-lock'
 
-const lock = new AsyncLock()
 const excludedNumbers = ['+1 (727) 966-2707', '+1 (737) 345-3339']
-
-const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
+const lock = new AsyncLock()
 
 const getDataOpenPhone = async (req, res) => {
   try {
@@ -33,7 +31,6 @@ const getDataOpenPhone = async (req, res) => {
     }
 
     if (validNumber) {
-      await delay(90000)
       await lock.acquire(validNumber, async () => {
         contact = await findContactInZohoCRM(validNumber)
         if (!contact) {
@@ -48,10 +45,11 @@ const getDataOpenPhone = async (req, res) => {
               .status(500)
               .json({ error: 'Error creating/updating contact in Zoho CRM' })
           } else {
-            return res.status(200).json({
+            res.status(200).json({
               message: 'Creating/updating contact in Zoho CRM',
               contact,
             })
+            return
           }
         }
       })
