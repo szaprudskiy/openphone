@@ -5,8 +5,7 @@ import updateContactWithOutgoingMessage from '../services/updateContactWithOutgo
 import updateContactWithRecording from '../services/updateContactWithCallRecording.js'
 import createContactInZohoCRM from '../services/createContactInZohoCRM.js'
 
-// Список номеров для исключения
-const excludedNumbers = ['+1234567890', '+0987654321']
+const excludedNumbers = ['+1 (727) 966-2707', '+1 (737) 345-3339']
 
 const getDataOpenPhone = async (req, res) => {
   try {
