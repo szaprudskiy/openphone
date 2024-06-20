@@ -9,6 +9,8 @@ import createContactInZohoCRM from '../services/createContactInZohoCRM.js'
 const excludedNumbers = ['+1 (727) 966-2707', '+1 (737) 345-3339']
 const lock = new AsyncLock()
 
+const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
+
 const getDataOpenPhone = async (req, res) => {
   try {
     const {
@@ -31,28 +33,38 @@ const getDataOpenPhone = async (req, res) => {
     }
 
     if (validNumber) {
-      await lock.acquire(validNumber, async () => {
-        contact = await findContactInZohoCRM(validNumber)
-        if (!contact) {
-          contact = await createContactInZohoCRM(
-            validNumber,
-            media ? media[0]?.url : null,
-            body,
-            type
-          )
+      await lock.acquire(validNumber, async (done) => {
+        try {
+          contact = await findContactInZohoCRM(validNumber)
           if (!contact) {
-            return res
-              .status(500)
-              .json({ error: 'Error creating/updating contact in Zoho CRM' })
+            await delay(80000) // Add delay before creating the contact
+            contact = await createContactInZohoCRM(
+              validNumber,
+              media ? media[0]?.url : null,
+              body,
+              type
+            )
+            if (contact) {
+              res.status(200).json({
+                message: 'Creating/updating contact in Zoho CRM',
+                contact,
+              })
+            } else {
+              res
+                .status(500)
+                .json({ error: 'Error creating/updating contact in Zoho CRM' })
+            }
           } else {
-            res.status(200).json({
-              message: 'Creating/updating contact in Zoho CRM',
-              contact,
-            })
-            return
+            done() // Release the lock if contact exists
           }
+        } catch (error) {
+          console.error('Error within lock:', error)
+          res.status(500).json({ error: 'Internal Server Error' })
+          done(error) // Release the lock in case of error
         }
       })
+    } else {
+      res.status(404).json({ message: 'Valid number not found' })
     }
 
     if (contact) {
