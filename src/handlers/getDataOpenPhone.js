@@ -1,13 +1,14 @@
-import AsyncLock from 'async-lock'
 import formatPhoneNumber from '../utils/formatPhoneNumber.js'
 import findContactInZohoCRM from '../services/findContactInZohoCRM.js'
 import updateContactWithIncomingMessage from '../services/updateContactWithIncomingMessage.js'
 import updateContactWithOutgoingMessage from '../services/updateContactWithOutgoingMessage.js'
 import updateContactWithRecording from '../services/updateContactWithCallRecording.js'
 import createContactInZohoCRM from '../services/createContactInZohoCRM.js'
+import lock from '../lock.js'
 
 const excludedNumbers = ['+1 (727) 966-2707', '+1 (737) 345-3339']
-const lock = new AsyncLock()
+
+const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 
 const getDataOpenPhone = async (req, res) => {
   try {
@@ -34,6 +35,7 @@ const getDataOpenPhone = async (req, res) => {
       await lock.acquire(validNumber, async () => {
         contact = await findContactInZohoCRM(validNumber)
         if (!contact) {
+          await delay(80000) // Задержка 80 секунд перед созданием контакта
           contact = await createContactInZohoCRM(
             validNumber,
             media ? media[0]?.url : null,
