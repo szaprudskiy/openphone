@@ -1,15 +1,13 @@
-import AsyncLock from 'async-lock'
+import Queue from 'queue-promise'
 import formatPhoneNumber from '../utils/formatPhoneNumber.js'
 import findContactInZohoCRM from '../services/findContactInZohoCRM.js'
+import createContactInZohoCRM from '../services/createContactInZohoCRM.js'
 import updateContactWithIncomingMessage from '../services/updateContactWithIncomingMessage.js'
 import updateContactWithOutgoingMessage from '../services/updateContactWithOutgoingMessage.js'
 import updateContactWithRecording from '../services/updateContactWithCallRecording.js'
-import createContactInZohoCRM from '../services/createContactInZohoCRM.js'
 
 const excludedNumbers = ['+1 (727) 966-2707', '+1 (737) 345-3339']
-const lock = new AsyncLock()
-
-const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
+const queue = new Queue({ concurrent: 1 }) // Очередь с одновременным выполнением одной задачи
 
 const getDataOpenPhone = async (req, res) => {
   try {
@@ -23,52 +21,60 @@ const getDataOpenPhone = async (req, res) => {
     const formattedFrom = formatPhoneNumber(from)
     const formattedTo = formatPhoneNumber(to)
 
-    let contact = null
     let validNumber = null
-
     if (!excludedNumbers.includes(formattedFrom)) {
       validNumber = formattedFrom
     } else if (!excludedNumbers.includes(formattedTo)) {
       validNumber = formattedTo
     }
 
-    if (validNumber) {
-      await lock.acquire(validNumber, async (done) => {
-        try {
-          // Пауза перед созданием контакта для снижения вероятности одновременного создания
-          await delay(80000)
-
-          contact = await findContactInZohoCRM(validNumber)
-          if (!contact) {
-            contact = await createContactInZohoCRM(
-              validNumber,
-              media ? media[0]?.url : null,
-              body,
-              type
-            )
-            if (contact) {
-              res.status(200).json({
-                message: 'Creating/updating contact in Zoho CRM',
-                contact,
-              })
-            } else {
-              res.status(500).json({
-                error: 'Error creating/updating contact in Zoho CRM',
-              })
-            }
-          }
-        } catch (error) {
-          console.error('Error within lock:', error)
-          res.status(500).json({ error: 'Internal Server Error' })
-        } finally {
-          done() // Всегда освобождайте блокировку в конце блока
-        }
-      })
-    } else {
-      res.status(404).json({ message: 'Valid number not found' })
+    if (!validNumber) {
+      return res.status(404).json({ message: 'Valid number not found' })
     }
 
-    if (contact) {
+    // Функция для создания контакта в Zoho CRM
+    const createContactTask = async () => {
+      try {
+        const contact = await createContactInZohoCRM(
+          validNumber,
+          media ? media[0]?.url : null,
+          body,
+          type
+        )
+        if (contact) {
+          return { success: true, contact }
+        } else {
+          return { success: false }
+        }
+      } catch (error) {
+        console.error('Error creating contact:', error)
+        return { success: false, error }
+      }
+    }
+
+    // Добавляем задачу в очередь на создание контакта
+    const { success, contact, error } = await queue.add(createContactTask)
+
+    if (success) {
+      if (contact) {
+        res.status(201).json({
+          message: 'Contact created successfully in Zoho CRM',
+          contact,
+        })
+      } else {
+        res.status(500).json({
+          error: 'Error creating contact in Zoho CRM',
+        })
+      }
+    } else {
+      res.status(500).json({
+        error: 'Error processing create contact task',
+        details: error ? error.message : 'Unknown error',
+      })
+    }
+
+    // Обработка других типов событий
+    if (success && contact) {
       if (type === 'call.recording.completed') {
         const result = await updateContactWithRecording(
           contact.id,
@@ -91,8 +97,6 @@ const getDataOpenPhone = async (req, res) => {
           result,
         })
       }
-    } else {
-      res.status(404).json({ message: 'Contact not found' })
     }
   } catch (error) {
     console.error('Error processing webhook:', error)
