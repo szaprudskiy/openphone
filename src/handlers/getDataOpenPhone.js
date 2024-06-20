@@ -11,7 +11,7 @@ const excludedNumbers = ['+1 (727) 966-2707', '+1 (737) 345-3339']
 // Create a queue
 const queue = new Queue({
   concurrent: 1,
-  interval: 0,
+  interval: 80000, // Задержка в 8000 миллисекунд (8 секунд) между задачами
 })
 
 queue.on('resolve', (data) => {
@@ -43,64 +43,82 @@ const getDataOpenPhone = async (req, res) => {
     }
 
     if (validNumber) {
-      queue.enqueue(async () => {
-        try {
-          let contact = await findContactInZohoCRM(validNumber)
+      queue
+        .enqueue(async () => {
+          try {
+            let contact = await findContactInZohoCRM(validNumber)
 
-          if (!contact) {
-            contact = await createContactInZohoCRM(
-              validNumber,
-              media ? media[0]?.url : null,
-              body,
-              type
-            )
+            if (!contact) {
+              contact = await createContactInZohoCRM(
+                validNumber,
+                media ? media[0]?.url : null,
+                body,
+                type
+              )
 
-            if (contact) {
-              res.status(200).json({
-                message: 'Creating/updating contact in Zoho CRM',
-                contact,
-              })
-            } else {
-              res.status(500).json({
-                error: 'Error creating/updating contact in Zoho CRM',
-              })
-              return
+              if (contact) {
+                return {
+                  status: 200,
+                  message: 'Creating/updating contact in Zoho CRM',
+                  contact,
+                }
+              } else {
+                throw new Error('Error creating/updating contact in Zoho CRM')
+              }
             }
-          }
 
-          if (type === 'call.recording.completed') {
-            const result = await updateContactWithRecording(
-              contact.id,
-              media[0].url
-            )
-            res.status(200).json({
-              message: 'Call recording added successfully',
-              result,
-            })
-          } else if (type === 'message.received') {
-            const result = await updateContactWithIncomingMessage(
-              contact.id,
-              body
-            )
-            res.status(200).json({
-              message: 'Incoming Message added successfully',
-              result,
-            })
-          } else if (type === 'message.delivered') {
-            const result = await updateContactWithOutgoingMessage(
-              contact.id,
-              body
-            )
-            res.status(200).json({
-              message: 'Outgoing Message added successfully',
-              result,
-            })
+            if (type === 'call.recording.completed') {
+              const result = await updateContactWithRecording(
+                contact.id,
+                media[0].url
+              )
+              return {
+                status: 200,
+                message: 'Call recording added successfully',
+                result,
+              }
+            } else if (type === 'message.received') {
+              const result = await updateContactWithIncomingMessage(
+                contact.id,
+                body
+              )
+              return {
+                status: 200,
+                message: 'Incoming Message added successfully',
+                result,
+              }
+            } else if (type === 'message.delivered') {
+              const result = await updateContactWithOutgoingMessage(
+                contact.id,
+                body
+              )
+              return {
+                status: 200,
+                message: 'Outgoing Message added successfully',
+                result,
+              }
+            }
+
+            return {
+              status: 200,
+              message: 'Contact found and no updates needed',
+              contact,
+            }
+          } catch (error) {
+            console.error('Error processing task:', error)
+            throw error // Проброс ошибки для обработки в основном потоке
           }
-        } catch (error) {
-          console.error('Error processing task:', error)
+        })
+        .then((result) => {
+          res.status(result.status).json({
+            message: result.message,
+            contact: result.contact,
+            result: result.result,
+          })
+        })
+        .catch((error) => {
           res.status(500).json({ error: 'Internal Server Error' })
-        }
-      })
+        })
     } else {
       res.status(404).json({ message: 'Valid number not found' })
     }
