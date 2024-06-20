@@ -27,7 +27,7 @@ const getDataOpenPhone = async (req, res) => {
     const {
       type,
       data: { object: eventData },
-    } = req.body.object
+    } = req.body
 
     const { from, to, media, body } = eventData
 
