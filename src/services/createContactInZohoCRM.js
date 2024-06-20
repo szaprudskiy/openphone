@@ -9,7 +9,7 @@ const createContactInZohoCRM = async (phone, recordingUrl, message, type) => {
 
     if (existingContact) {
       const response = await axios.put(
-        `${process.env.ZOHO_CRM_API_BASE_URL}/Contacts`,
+        'https://www.zohoapis.com/crm/v2/Contacts',
         {
           data: [
             {
@@ -51,7 +51,7 @@ const createContactInZohoCRM = async (phone, recordingUrl, message, type) => {
       }
 
       const response = await axios.post(
-        `${process.env.ZOHO_CRM_API_BASE_URL}/Contacts`,
+        'https://www.zohoapis.com/crm/v2/Contacts',
         {
           data: [
             {

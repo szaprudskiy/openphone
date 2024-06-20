@@ -5,7 +5,7 @@ const updateContactWithOutgoingMessage = async (contactId, message) => {
   try {
     const accessToken = await getAccessToken()
     const response = await axios.get(
-      `${process.env.ZOHO_CRM_API_BASE_URL}/Contacts/${contactId}`,
+      `https://www.zohoapis.com/crm/v2/Contacts/${contactId}`,
       {
         headers: {
           Authorization: `Zoho-oauthtoken ${accessToken}`,
@@ -26,7 +26,7 @@ const updateContactWithOutgoingMessage = async (contactId, message) => {
     currentMessages += `\n${numberedMessage}`
 
     await axios.put(
-      `${process.env.ZOHO_CRM_API_BASE_URL}/Contacts`,
+      'https://www.zohoapis.com/crm/v2/Contacts',
       {
         data: [
           {
