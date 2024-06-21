@@ -25,7 +25,7 @@ const getDataOpenPhone = async (req, res) => {
   try {
     const { type, data } = req.body
 
-    const { from, to, media, body } = data
+    const { from, to, media, body } = data.object
 
     const formattedFrom = formatPhoneNumber(from)
     const formattedTo = formatPhoneNumber(to)
