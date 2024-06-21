@@ -14,12 +14,61 @@ const queue = new Queue({
 })
 
 queue.on('resolve', (data) => {
-  console.log('Task completed:', data)
+  const { res, result } = data
+  res.status(result.status).json(result.data)
+  console.log('Task completed:', result)
 })
 
 queue.on('reject', (error) => {
-  console.error('Task failed:', error)
+  const { res, err } = error
+  res.status(500).json({ error: 'Internal Server Error' })
+  console.error('Task failed:', err)
 })
+
+const processContact = async (validNumber, type, media, body) => {
+  let contact = await findContactInZohoCRM(validNumber)
+  if (!contact) {
+    contact = await createContactInZohoCRM(
+      validNumber,
+      media && media.length > 0 ? media[0].url : null,
+      body,
+      type
+    )
+    if (!contact) {
+      return {
+        status: 500,
+        data: { error: 'Error creating/updating contact in Zoho CRM' },
+      }
+    }
+    return {
+      status: 201,
+      data: { message: 'Creating/updating contact in Zoho CRM', contact },
+    }
+  }
+
+  // Continue processing based on the event type
+  if (type === 'call.recording.completed') {
+    const result = await updateContactWithRecording(contact.id, media[0].url)
+    return {
+      status: 200,
+      data: { message: 'Call recording added successfully', result },
+    }
+  } else if (type === 'message.received') {
+    const result = await updateContactWithIncomingMessage(contact.id, body)
+    return {
+      status: 200,
+      data: { message: 'Incoming Message added successfully', result },
+    }
+  } else if (type === 'message.delivered') {
+    const result = await updateContactWithOutgoingMessage(contact.id, body)
+    return {
+      status: 200,
+      data: { message: 'Outgoing Message added successfully', result },
+    }
+  } else {
+    return { status: 404, data: { message: 'Contact not found' } }
+  }
+}
 
 const getDataOpenPhone = async (req, res) => {
   try {
@@ -28,10 +77,6 @@ const getDataOpenPhone = async (req, res) => {
       data: { object: eventData },
     } = req.body.object
 
-    console.log('req.body', req.body)
-
-    console.log('req.body.object', req.body.object)
-
     const { from, to, media, body } = eventData
 
     const formattedFrom = formatPhoneNumber(from)
@@ -39,107 +84,16 @@ const getDataOpenPhone = async (req, res) => {
 
     if (!excludedNumbers.includes(formattedFrom)) {
       queue.enqueue(async () => {
-        let validNumber = formattedFrom
-        let contact = await findContactInZohoCRM(validNumber)
-        if (!contact) {
-          contact = await createContactInZohoCRM(
-            validNumber,
-            media && media.length > 0 ? media[0].url : null,
-            body,
-            type
-          )
-          if (!contact) {
-            return res
-              .status(500)
-              .json({ error: 'Error creating/updating contact in Zoho CRM' })
-          }
-
-          return res
-            .status(201)
-            .json({ message: 'Creating/updating contact in Zoho CRM', contact })
-        }
-
-        // Continue processing based on the event type
-        if (type === 'call.recording.completed') {
-          const result = await updateContactWithRecording(
-            contact.id,
-            media[0].url
-          )
-          return res
-            .status(200)
-            .json({ message: 'Call recording added successfully', result })
-        } else if (type === 'message.received') {
-          const result = await updateContactWithIncomingMessage(
-            contact.id,
-            body
-          )
-          return res
-            .status(200)
-            .json({ message: 'Incoming Message added successfully', result })
-        } else if (type === 'message.delivered') {
-          const result = await updateContactWithOutgoingMessage(
-            contact.id,
-            body
-          )
-          return res
-            .status(200)
-            .json({ message: 'Outgoing Message added successfully', result })
-        } else {
-          return res.status(404).json({ message: 'Contact not found' })
-        }
+        const result = await processContact(formattedFrom, type, media, body)
+        return { res, result }
       })
-    }
-    if (!excludedNumbers.includes(formattedTo)) {
+    } else if (!excludedNumbers.includes(formattedTo)) {
       queue.enqueue(async () => {
-        let validNumber = formattedTo
-        let contact = await findContactInZohoCRM(validNumber)
-        if (!contact) {
-          contact = await createContactInZohoCRM(
-            validNumber,
-            media ? media[0]?.url : null,
-            body,
-            type
-          )
-          if (!contact) {
-            return res
-              .status(500)
-              .json({ error: 'Error creating/updating contact in Zoho CRM' })
-          }
-
-          return res
-            .status(201)
-            .json({ message: 'Creating/updating contact in Zoho CRM', contact })
-        }
-
-        // Continue processing based on the event type
-        if (type === 'call.recording.completed') {
-          const result = await updateContactWithRecording(
-            contact.id,
-            media[0].url
-          )
-          return res
-            .status(200)
-            .json({ message: 'Call recording added successfully', result })
-        } else if (type === 'message.received') {
-          const result = await updateContactWithIncomingMessage(
-            contact.id,
-            body
-          )
-          return res
-            .status(200)
-            .json({ message: 'Incoming Message added successfully', result })
-        } else if (type === 'message.delivered') {
-          const result = await updateContactWithOutgoingMessage(
-            contact.id,
-            body
-          )
-          return res
-            .status(200)
-            .json({ message: 'Outgoing Message added successfully', result })
-        } else {
-          return res.status(404).json({ message: 'Contact not found' })
-        }
+        const result = await processContact(formattedTo, type, media, body)
+        return { res, result }
       })
+    } else {
+      res.status(404).json({ message: 'Valid number not found' })
     }
   } catch (error) {
     console.error('Error processing webhook:', error)
