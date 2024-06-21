@@ -40,7 +40,7 @@ const getDataOpenPhone = async (req, res) => {
         if (!contact) {
           contact = await createContactInZohoCRM(
             validNumber,
-            media ? media[0]?.url : null,
+            media && media.length > 0 ? media[0].url : null,
             body,
             type
           )
