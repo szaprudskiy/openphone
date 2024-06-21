@@ -23,27 +23,9 @@ queue.on('reject', (error) => {
 
 const getDataOpenPhone = async (req, res) => {
   try {
-    if (!req.body || !req.body.object) {
-      console.error('Invalid request body', req.body)
-    }
-
     const { type, data } = req.body
 
-    if (!data || !data.object) {
-      console.error('Invalid data object', data)
-    }
-
-    if (!type) {
-      console.error('type', type)
-    }
-
-    const eventData = data
-
-    console.log('req.body', req.body)
-    console.log('req.body.object', req.body.object)
-    console.log('eventData', eventData)
-
-    const { from, to, media, body } = eventData
+    const { from, to, media, body } = data
 
     const formattedFrom = formatPhoneNumber(from)
     const formattedTo = formatPhoneNumber(to)
