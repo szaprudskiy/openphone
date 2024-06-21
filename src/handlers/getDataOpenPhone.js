@@ -10,7 +10,7 @@ const excludedNumbers = ['+1 (727) 966-2707', '+1 (737) 345-3339']
 
 const queue = new Queue({
   concurrent: 1,
-  interval: 120000,
+  interval: 80000,
 })
 
 queue.on('resolve', (data) => {
