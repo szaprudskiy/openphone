@@ -11,7 +11,7 @@ const excludedNumbers = ['+1 (727) 966-2707', '+1 (737) 345-3339']
 // Create a queue
 const queue = new Queue({
   concurrent: 1,
-  interval: 80000,
+  interval: 80000, // 1 second interval between tasks
 })
 
 queue.on('resolve', (data) => {
@@ -46,7 +46,6 @@ const getDataOpenPhone = async (req, res) => {
       queue
         .enqueue(async () => {
           let contact = await findContactInZohoCRM(validNumber)
-
           if (!contact) {
             contact = await createContactInZohoCRM(
               validNumber,
@@ -55,42 +54,59 @@ const getDataOpenPhone = async (req, res) => {
               type
             )
             if (!contact) {
-              return res
-                .status(500)
-                .json({ error: 'Error creating/updating contact in Zoho CRM' })
+              throw new Error('Error creating/updating contact in Zoho CRM')
             }
-            res.status(200).json({
-              message: 'Creating/updating contact in Zoho CRM',
-              contact,
-            })
-            return
+            // Return the created contact for response
+            return {
+              status: 200,
+              data: {
+                message: 'Creating/updating contact in Zoho CRM',
+                contact,
+              },
+            }
           }
 
+          // Continue processing based on the event type
           if (type === 'call.recording.completed') {
             const result = await updateContactWithRecording(
               contact.id,
               media[0].url
             )
-            res
-              .status(200)
-              .json({ message: 'Call recording added successfully', result })
+            return {
+              status: 200,
+              data: { message: 'Call recording added successfully', result },
+            }
           } else if (type === 'message.received') {
             const result = await updateContactWithIncomingMessage(
               contact.id,
               body
             )
-            res
-              .status(200)
-              .json({ message: 'Incoming Message added successfully', result })
+            return {
+              status: 200,
+              data: { message: 'Incoming Message added successfully', result },
+            }
           } else if (type === 'message.delivered') {
             const result = await updateContactWithOutgoingMessage(
               contact.id,
               body
             )
-            res
-              .status(200)
-              .json({ message: 'Outgoing Message added successfully', result })
+            return {
+              status: 200,
+              data: { message: 'Outgoing Message added successfully', result },
+            }
+          } else {
+            return {
+              status: 200,
+              data: {
+                message: 'Contact found or created successfully',
+                contact,
+              },
+            }
           }
+        })
+        .then((result) => {
+          // Send the response only once here after processing the task
+          res.status(result.status).json(result.data)
         })
         .catch((error) => {
           console.error('Error processing task:', error)
