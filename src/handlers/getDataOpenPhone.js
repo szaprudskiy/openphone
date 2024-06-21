@@ -24,12 +24,14 @@ queue.on('reject', (error) => {
 const getDataOpenPhone = async (req, res) => {
   try {
     if (!req.body || !req.body.object) {
+      console.error('Invalid request body', req.body)
       return res.status(400).json({ error: 'Invalid request body' })
     }
 
     const { type, data } = req.body.object
 
     if (!data || !data.object) {
+      console.error('Invalid data object', data)
       return res.status(400).json({ error: 'Invalid data object' })
     }
 
@@ -37,6 +39,7 @@ const getDataOpenPhone = async (req, res) => {
 
     console.log('req.body', req.body)
     console.log('req.body.object', req.body.object)
+    console.log('eventData', eventData)
 
     const { from, to, media, body } = eventData
 
