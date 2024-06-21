@@ -27,6 +27,10 @@ const getDataOpenPhone = async (req, res) => {
 
     const { from, to, media, body } = data.object
 
+    console.log('req.body', req.body)
+    console.log('data', data)
+    console.log('data.object', data.object)
+
     const formattedFrom = formatPhoneNumber(from)
     const formattedTo = formatPhoneNumber(to)
 
