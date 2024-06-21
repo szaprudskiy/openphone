@@ -63,7 +63,7 @@ const getDataOpenPhone = async (req, res) => {
                     })
                   }
                   return resolve({
-                    status: 200,
+                    status: 201,
                     message: 'Creating/updating contact in Zoho CRM',
                     contact,
                   })
@@ -83,12 +83,10 @@ const getDataOpenPhone = async (req, res) => {
             if (type === 'call.recording.completed') {
               updateContactWithRecording(contact.id, media[0].url)
                 .then((result) => {
-                  return res
-                    .status(200)
-                    .json({
-                      message: 'Call recording added successfully',
-                      result,
-                    })
+                  return res.status(200).json({
+                    message: 'Call recording added successfully',
+                    result,
+                  })
                 })
                 .catch((error) => {
                   console.error('Error updating contact with recording:', error)
@@ -99,12 +97,10 @@ const getDataOpenPhone = async (req, res) => {
             } else if (type === 'message.received') {
               updateContactWithIncomingMessage(contact.id, body)
                 .then((result) => {
-                  return res
-                    .status(200)
-                    .json({
-                      message: 'Incoming Message added successfully',
-                      result,
-                    })
+                  return res.status(200).json({
+                    message: 'Incoming Message added successfully',
+                    result,
+                  })
                 })
                 .catch((error) => {
                   console.error(
@@ -118,12 +114,10 @@ const getDataOpenPhone = async (req, res) => {
             } else if (type === 'message.delivered') {
               updateContactWithOutgoingMessage(contact.id, body)
                 .then((result) => {
-                  return res
-                    .status(200)
-                    .json({
-                      message: 'Outgoing Message added successfully',
-                      result,
-                    })
+                  return res.status(200).json({
+                    message: 'Outgoing Message added successfully',
+                    result,
+                  })
                 })
                 .catch((error) => {
                   console.error(
