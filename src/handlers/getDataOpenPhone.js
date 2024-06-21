@@ -27,7 +27,7 @@ const getDataOpenPhone = async (req, res) => {
       console.error('Invalid request body', req.body)
     }
 
-    const { type, data } = req.body.object
+    const { type, data } = req.body
 
     if (!data || !data.object) {
       console.error('Invalid data object', data)
@@ -37,7 +37,7 @@ const getDataOpenPhone = async (req, res) => {
       console.error('type', type)
     }
 
-    const eventData = data.object
+    const eventData = data
 
     console.log('req.body', req.body)
     console.log('req.body.object', req.body.object)
