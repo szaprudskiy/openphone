@@ -104,7 +104,7 @@ const getDataOpenPhone = async (req, res) => {
           }
 
           return res
-            .status(201)
+            .status(200)
             .json({ message: 'Creating/updating contact in Zoho CRM', contact })
         }
 
