@@ -40,7 +40,7 @@ const createContactInZohoCRM = async (phone, recordingUrl, message, type) => {
       console.log('message', message)
       console.log('type', type)
 
-      let currentRecordings = recordingUrl ? `1. ${recordingUrl}` : ''
+      // let currentRecordings = recordingUrl ? `1. ${recordingUrl}` : ''
 
       let currentMessage
 
@@ -57,7 +57,7 @@ const createContactInZohoCRM = async (phone, recordingUrl, message, type) => {
             {
               Phone: phone,
               Last_Name: 'OpenPhone',
-              Multi_Line_5: currentRecordings,
+              Multi_Line_5: recordingUrl,
               Incoming_Messages: currentMessage,
             },
           ],
